@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Fitts' Law - API Example</title>
+  <script src="api-key-config.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .formula-container {
+      background-color: #f9fafb;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+    
+    /* Styles for interactive variables */
+    .interactive-var-input {
+      color: blue;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .interactive-var-output {
+      color: green;
+      font-weight: bold;
+    }
+    
+    .interactive-var-constant {
+      color: gray;
+    }
+    
+    .interactive-var-slidable {
+      color: purple;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .interactive-var-slideable {
+      color: purple;
+      cursor: pointer;
+      font-weight: bold;
+      transition: opacity 0.2s ease;
+    }
+    
+    .interactive-var-scrubbable {
+      color: blue;
+      cursor: ns-resize;
+      font-weight: bold;
+      transition: opacity 0.2s ease;
+    }
+    
+    /* Hover effects for interactive elements */
+    .interactive-var-input:hover,
+    .interactive-var-slidable:hover,
+    .interactive-var-slideable:hover,
+    .interactive-var-scrubbable:hover {
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+    
+    /* Hover effect class applied via JavaScript */
+    .hover-effect {
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+    
+    /* Slider overlay styles */
+    .slider-overlay {
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      padding: 10px;
+      position: absolute;
+      z-index: 1000;
+    }
+    
+    .variable-info {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    
+    .variable-card {
+      flex: 1;
+      min-width: 200px;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin: 0.5rem;
+      background-color: #f3f4f6;
+    }
+    
+    .variable-card h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #374151;
+    }
+    
+    .variable-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .variable-slider {
+      width: 100%;
+    }
+    
+    .output-variable {
+      background-color: #fee2e2;
+    }
+    
+    .input-variable {
+      background-color: #dbeafe;
+    }
+    
+    .panel {
+      background-color: #f0fdf4;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 2rem;
+      border-left: 4px solid #22c55e;
+    }
+    
+    .explanation {
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Fitts' Law - API Example</h1>
+  
+  <p>This example demonstrates how to use the Interactive Math Library API to create an interactive Fitts' Law formula with automatic LLM function generation.</p>
+  
+  <div id="formula-container" class="formula-container">
+    <!-- The formula will be rendered here by the library -->
+  </div>
+  
+  <div id="variable-info" class="variable-info">
+    <!-- Variable cards will be rendered here -->
+  </div>
+  
+  <div class="explanation">
+    <h2>Fitts' Law Explained</h2>
+    <p>Fitts' Law predicts that the time required to rapidly move to a target area is a function of the ratio between the distance to the target and the width of the target:</p>
+    <p>T = a + b * log<sub>2</sub>(2D/W)</p>
+    <p>Where:</p>
+    <ul>
+      <li><strong>T</strong> is the average time taken to complete the movement</li>
+      <li><strong>a</strong> and <strong>b</strong> are empirical constants determined through regression</li>
+      <li><strong>D</strong> is the distance from the starting point to the center of the target</li>
+      <li><strong>W</strong> is the width of the target measured along the axis of motion</li>
+    </ul>
+  </div>
+  
+  <script type="module">
+    // Import the defineEquation function from the library
+    import { defineEquation } from '../dist/index.js';
+    
+    // Get the container element for the formula
+    const formulaContainer = document.getElementById('formula-container');
+    const variableInfoContainer = document.getElementById('variable-info');
+    
+    // Define the Fitts' Law equation
+    const equation = defineEquation({
+      // The LaTeX formula for Fitts' Law
+      formula: "T = a + b \\cdot \\log_2(2D/W)",
+      
+      // Define the variables for Fitts' Law
+      variables: {
+        // Input constants
+        a: { 
+          type: "input", 
+          value: 0.1, 
+          range: [0, 10]  // Increased upper range
+        },
+        b: { 
+          type: "input", 
+          value: 0.5, 
+          range: [0.1, 5]  // Increased upper range
+        },
+        
+        // Input variables
+        D: { 
+          type: "input", 
+          value: 5, 
+          range: [1, 100],  // Increased upper range
+          units: "cm" 
+        },
+        W: { 
+          type: "input", 
+          value: 1, 
+          range: [0.1, 20],  // Increased upper range
+          units: "cm" 
+        },
+        
+        // Output variable
+        T: { 
+          type: "output", 
+          value: 0, 
+          units: "s" 
+        }
+      },
+      
+      // Set renderer to use MathJax (default)
+      renderer: "mathjax"
+    });
+    
+    // Render the equation to the container
+    equation.renderTo(formulaContainer).then(() => {
+      console.log("Equation rendered successfully");
+      
+      // Create variable information cards
+      createVariableCards();
+    });
+    
+    // Create cards for each variable to display information and sliders for input variables
+    function createVariableCards() {
+      // Get the current values of variables
+      const variableValues = equation.getVariableValues();
+      
+      // Create cards for each variable
+      Object.entries(variableValues).forEach(([symbol, info]) => {
+        const card = document.createElement('div');
+        card.className = `variable-card ${info.type === 'output' ? 'output-variable' : 'input-variable'}`;
+        
+        // Create title
+        const title = document.createElement('h3');
+        title.textContent = `${symbol}${info.units ? ` (${info.units})` : ''}`;
+        card.appendChild(title);
+        
+        // Create value display
+        const valueDisplay = document.createElement('div');
+        valueDisplay.className = 'variable-value';
+        valueDisplay.id = `${symbol}-value`;
+        valueDisplay.textContent = info.value.toFixed(2);
+        card.appendChild(valueDisplay);
+        
+        // Create slider for input variables
+        if (info.type === 'input') {
+          const slider = document.createElement('input');
+          slider.type = 'range';
+          slider.className = 'variable-slider';
+          slider.min = info.range ? info.range[0] : 0;
+          slider.max = info.range ? info.range[1] : 100;
+          slider.step = 0.01;
+          slider.value = info.value;
+          
+          // Add event listener for slider changes
+          slider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            equation.setVariable(symbol, value);
+            
+            // Update the value display
+            document.getElementById(`${symbol}-value`).textContent = value.toFixed(2);
+          });
+          
+          card.appendChild(slider);
+        }
+        
+        variableInfoContainer.appendChild(card);
+      });
+      
+      // Register a listener for variable changes from the equation
+      equation.onChange((variables) => {
+        // Update all variable displays
+        Object.entries(variables).forEach(([symbol, info]) => {
+          const valueDisplay = document.getElementById(`${symbol}-value`);
+          if (valueDisplay) {
+            valueDisplay.textContent = info.value.toFixed(2);
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html> 
